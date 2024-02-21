@@ -1,0 +1,1 @@
+from models.bert_model import Bert_model

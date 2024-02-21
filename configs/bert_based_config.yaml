@@ -1,0 +1,141 @@
+# ------------------------------------------------------------------------------------------------
+# These are the settings for parameter searching using sweep
+# ------------------------------------------------------------------------------------------------
+
+sweep_config:
+  # <========================Training Config ========================>
+
+  train_config:
+    train_times:
+      value: 5
+
+    num_epochs: 
+      value: 30
+    batch_size: 
+      value: 16
+
+    warmup_ratio:
+      values: [0, 0.1, 0.2]
+    transformer_learning_rate:
+      values: [1.0e-5, 5.0e-6, 1.0e-6]
+    linear_learning_rate:
+      values: [1.0e-3, 1.0e-4, 1.0e-5]
+    weight_decay:
+      values: [1.0e-2, 1.0e-3, 1.0e-4, 1.0e-5]
+
+    text_with_target:
+      value: True
+    if_split_hash_tag:
+      values: [True, False]
+    linear_injection:
+      values: [-1, 300, 512]
+
+  # <========================Bert Model Config========================>
+
+  model_config:
+    # ----------------------------------------------------------------
+    roberta_base:
+      label_size:
+        value: Null
+      max_tokenization_length: 
+        value: 512
+      transformer_tokenizer_name:
+        value: model_state/roberta-base
+      transformer_name:
+        value: model_state/roberta-base
+
+    roberta_large:
+      label_size:
+        value: Null
+      max_tokenization_length: 
+        value: 512
+      transformer_tokenizer_name:
+        value: model_state/roberta-large
+      transformer_name:
+        value: model_state/roberta-large
+
+    # ----------------------------------------------------------------  
+    bertweet_base:
+      label_size: 
+        value: Null
+      max_tokenization_length: 
+        value: 128
+      transformer_tokenizer_name: 
+        value: model_state/vinai/bertweet-base
+      transformer_name: 
+        value: model_state/vinai/bertweet-base
+
+    # ----------------------------------------------------------------  
+    bertweet_large:
+      label_size: 
+        value: Null
+      max_tokenization_length: 
+        value: 512
+      transformer_tokenizer_name: 
+        value: model_state/vinai/bertweet-large
+      transformer_name: 
+        value: model_state/vinai/bertweet-large
+    
+    ct_bert_large:
+      label_size: 
+        value: Null
+      max_tokenization_length: 
+        value: 512
+      transformer_tokenizer_name: 
+        value: model_state/digitalepidemiologylab/covid-twitter-bert-v2
+      transformer_name: 
+        value: model_state/digitalepidemiologylab/covid-twitter-bert-v2
+
+# ------------------------------------------------------------------------------------------------
+# These are the settings for final training and evaluation
+# ------------------------------------------------------------------------------------------------
+
+recommended_settings:
+  # <========================Training Config ========================>
+
+  train_config:
+    train_times: 5
+
+    num_epochs: 30
+    batch_size: 16
+    warmup_ratio: 0.2
+    transformer_learning_rate: 1.0e-5
+    linear_learning_rate: 1.0e-5
+    weight_decay: 1.0e-3
+
+    text_with_target: False
+    if_split_hash_tag: False
+    linear_injection: -1
+
+  # <========================Bert Model Config========================>
+
+  model_config:
+    roberta_base:
+      label_size: Null
+      max_tokenization_length: 512
+      transformer_tokenizer_name: model_state/roberta-base
+      transformer_name: model_state/roberta-base
+
+    roberta_large:
+      label_size: Null
+      max_tokenization_length: 512
+      transformer_tokenizer_name: model_state/roberta-large
+      transformer_name: model_state/roberta-large
+
+    bertweet_base:
+      label_size: Null
+      max_tokenization_length: 128
+      transformer_tokenizer_name: model_state/vinai/bertweet-base
+      transformer_name: model_state/vinai/bertweet-base
+
+    bertweet_large:
+      label_size: Null
+      max_tokenization_length: 512
+      transformer_tokenizer_name: model_state/vinai/bertweet-large
+      transformer_name: model_state/vinai/bertweet-large
+
+    ct_bert_large:
+      label_size: Null
+      max_tokenization_length: 512
+      transformer_tokenizer_name: model_state/digitalepidemiologylab/covid-twitter-bert-v2
+      transformer_name: model_state/digitalepidemiologylab/covid-twitter-bert-v2

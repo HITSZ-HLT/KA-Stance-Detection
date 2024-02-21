@@ -1,0 +1,8 @@
+python kasd_knowledge/process_knowledge.py --process_dataset_for_knowledge
+
+python kasd_knowledge/stance_discourse_knowledge/chatgpt_generate_handle_exception.py
+
+python kasd_knowledge/stance_episodic_knowledge/topic_model_heuristic_retrieval.py
+python kasd_knowledge/stance_episodic_knowledge/chatgpt_generate_handle_exception.py
+
+python kasd_knowledge/process_knowledge.py --get_kasd_dataset

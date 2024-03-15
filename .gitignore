@@ -1,0 +1,6 @@
+.vscode
+__pycache__
+outputs/*
+model_state
+datasets/*
+!datasets/preprocess_datasets.py

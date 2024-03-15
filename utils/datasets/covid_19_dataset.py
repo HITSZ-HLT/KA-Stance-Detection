@@ -58,8 +58,8 @@ class Covid19Dataset(Dataset):
             all_datas = all_datas[:150]
 
         for data in all_datas:
-            sentence = data['tweet_text']
-            target = data['target']
+            sentence = data['Tweet']
+            target = data['Target']
             if self.if_split_hash_tag:
                 sentence = split_hash_tag(sentence.lstrip().rstrip())
             else:
@@ -68,8 +68,8 @@ class Covid19Dataset(Dataset):
                 sentence = clean_text(sentence)
             datas.append(sentence)
             targets.append(target)
-            labels.append(Covid19Config.label2idx[data['label']])
-            label_num[data['label']] += 1
+            labels.append(Covid19Config.label2idx[data['Stance']])
+            label_num[data['Stance']] += 1
         logging.info(f'loading data {len(datas)} from {path}')
         logging.info(f'label num ' + ' '.join([f'{k}: {v}' for k,v in label_num.items()]))
         return datas, targets, labels
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     tokenizer.model_max_length=tokenizer.max_model_input_sizes['/'.join(transformer_tokenizer_name.split('/')[1:])]
     Covid19Dataset(
         tokenizer=tokenizer,
-        target_name=Covid19Config.target_names[0],
+        target_name=Covid19Config.in_target_target_names[0],
         in_target=True,
         test_data=True,
         debug_mode=True

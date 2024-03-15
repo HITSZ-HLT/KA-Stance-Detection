@@ -18,11 +18,11 @@ You could using `pip install -r requirement.txt` to install the required package
 
 Download the [Sem16](https://alt.qcri.org/semeval2016/task6), [P-stance](https://github.com/chuchun8/PStance), [Covid-19](https://github.com/kglandt/stance-detection-in-covid-19-tweets) and [VAST](https://github.com/emilyallaway/zero-shot-stance) or other stance detection dataset, place them into `dataset/raw_dataset/<dataset name>`
 
-Process the dataset into the following format:
+Process the datasets into the following format:
 
 ```
 # Each file is a csv file, containing at least the three keys 'tweet_text', 'target', 'label'
-- processed_dataset
+- datasets
   - <dataset name>
     - in-target
       - <target name>
@@ -42,7 +42,9 @@ Process the dataset into the following format:
     - ...
 ```
 
-Download our open-sourced knowledge from [Baidu Drive](https://pan.baidu.com/s/1X7Qn80vEdOiryoftiwEdUg?pwd=3ix3), and unzip them into folder `dataset/topic_knowledge`
+The way of how I process the datasets is shown in `datasets/preprocess_datasets.py`
+
+Download our open-sourced knowledge from [Baidu Drive](https://pan.baidu.com/s/1X7Qn80vEdOiryoftiwEdUg?pwd=3ix3), and unzip them into folder `datasets/topic_knowledge`
 
 Download your needed model states into `model_state` or remove all `model_state/` dir prefix in all config files in `configs`.
 
@@ -63,7 +65,7 @@ Take in-target stance detection on p-stance for example
 ```
 >>> sh scripts\baseline\bert_based\train.sh
 >>> input training dataset: [p_stance, sem16, covid_19, vast]: p_stance
->>> input train dataset mode: [single_target, zero_shot]: single_target
+>>> input train dataset mode: [in_target, zero_shot]: in_target
 >>> input model name: [roberta_base, roberta_large, bertweet_base, bertweet_large, ct_bert_large]: roberta_base
 >>> input model framework: [base, kasd]: kasd
 >>> input running mode: [sweep, wandb, normal]: normal

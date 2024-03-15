@@ -65,8 +65,8 @@ class VASTKASDDataset(Dataset):
             else:
                 datas.append(sentence)
             knowledges.append(knowledge)
-            labels.append(VASTConfig.label2idx[data['label']])
-            label_num[data['label']] += 1
+            labels.append(VASTConfig.label2idx[data['Stance']])
+            label_num[data['Stance']] += 1
         logging.info(f'loading data {len(datas)} from {path}')
         logging.info(f'label num ' + ' '.join([f'{k}: {v}' for k,v in label_num.items()]))
         return datas, knowledges, labels
@@ -85,7 +85,10 @@ if __name__ == '__main__':
 
     VASTKASDDataset(
         tokenizer=tokenizer,
-        target_name=VASTConfig.target_names[0],
+        text_with_target=False,
+        if_split_hash_tag=False,
+        target_name=VASTConfig.zero_shot_target_names[0],
+        zero_shot=True,
         train_data=True,
-        debug_mode=False
+        debug_mode=True
     )

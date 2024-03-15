@@ -69,12 +69,12 @@ class PStanceKASDDataset(Dataset):
                 sentence = clean_text(sentence)
                 knowledge = clean_text(knowledge)
             if self.text_with_target:
-                datas.append(PStanceConfig.topic_text[data['target']] + ' : ' + sentence)
+                datas.append(PStanceConfig.topic_text[data['Target']] + ' : ' + sentence)
             else:
                 datas.append(sentence)
             knowledges.append(knowledge)
-            labels.append(PStanceConfig.label2idx[data['label']])
-            label_num[data['label']] += 1
+            labels.append(PStanceConfig.label2idx[data['Stance']])
+            label_num[data['Stance']] += 1
         logging.info(f'loading data {len(datas)} from {path}')
         logging.info(f'label num ' + ' '.join([f'{k}: {v}' for k,v in label_num.items()]))
         return datas, knowledges, labels
@@ -93,6 +93,7 @@ if __name__ == '__main__':
     tokenizer.model_max_length=tokenizer.max_model_input_sizes['/'.join(transformer_tokenizer_name.split('/')[1:])]
     PStanceKASDDataset(
         tokenizer=tokenizer,
+        target_name=PStanceConfig.in_target_target_names[0],
         train_data=True,
         debug_mode=False
     )

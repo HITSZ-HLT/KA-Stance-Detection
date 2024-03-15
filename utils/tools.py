@@ -36,11 +36,11 @@ def load_csv(data_path):
 def save_csv(data_path, datas, mode='w'):
     field_names = datas[0].keys()
     if not os.path.exists(data_path) or mode == 'w':
-        with open(data_path, 'w', encoding='utf-8') as write_f:
+        with open(data_path, 'w', newline='', encoding='utf-8') as write_f:
             writer = csv.DictWriter(write_f, fieldnames=field_names)
             writer.writeheader()
 
-    with open(data_path, 'a', encoding='utf-8') as write_f:
+    with open(data_path, 'a', newline='', encoding='utf-8') as write_f:
         writer = csv.DictWriter(write_f, fieldnames=field_names)
         for data in datas:
             writer.writerow(data)

@@ -1,14 +1,23 @@
+import re
 import os
 import csv
+csv.field_size_limit(500 * 1024 * 1024)
 import json
 import time
 import logging
 from tqdm import tqdm
 from copy import deepcopy
-import openai
+import requests
 from datetime import datetime
+import sys
+sys.path.append('./')
+from kasd_knowledge.prompts import episodic_knowledge_prompt
 
-openai.api_key = '***'
+api_key = '***'
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {api_key}"
+}
 
 logger = logging.getLogger()
 logger.setLevel('INFO')
@@ -16,8 +25,10 @@ BASIC_FORMAT = '%(asctime)s - %(levelname)s - %(filename)-20s : %(lineno)s line 
 DATE_FORMAT = '%Y-%m-%d_%H:%M:%S'
 formatter = logging.Formatter(BASIC_FORMAT, DATE_FORMAT)
 
-write_file_dir = 'dataset/episodic_knowledge'
-fh = logging.FileHandler(f'{write_file_dir}/log/' + 'openai_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') +'.log')
+write_file_dir = 'datasets/episodic_knowledge'
+if not os.path.exists(f'{write_file_dir}/logs'):
+    os.makedirs(f'{write_file_dir}/logs')
+fh = logging.FileHandler(f'{write_file_dir}/logs/' + 'openai_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') +'.log')
 fh.setLevel(logging.INFO)
 logger.addHandler(fh)
 
@@ -26,31 +37,21 @@ chlr.setFormatter(formatter)
 logger.addHandler(chlr)
 
 dataset_names = [
-    'semeval16'
-    'p-stance',
-    'covid-19',
+    'sem16',
+    'p_stance',
+    'covid_19',
     'vast',
 ]
 
-read_data_dir = 'dataset/episodic_knowledge'
+read_data_dir = 'datasets/retrieved_knowledge'
 dataset_file_paths = {
-    'p-stance': [
-        f'{read_data_dir}/P-Stance/all_data.csv',
-    ],
-    'vast': [
-        f'{read_data_dir}/VAST/all_data.csv',
-    ],
-    'covid-19': [
-        f'{read_data_dir}/COVID-19/all_data.csv',
-    ],
-    'semeval16': [
-        f'{read_data_dir}/Semeval16/all_data.csv',
-    ]
+    'sem16': 'Semeval16/all_data.csv',
+    'p_stance': 'P-Stance/all_data.csv',
+    'covid_19': 'COVID-19/all_data.csv',
+    'vast': 'VAST/all_data.csv',
 }
 
-data_pointer_file_path = f'{write_file_dir}/data_pointer.json'
-
-field_names = ['tweet_id', 'tweet_text', 'target', 'label', 'knowledge_title', 'knowledge', 'knowledge_sim_rank', 'knowledge_sim_score', 'episodic_knowledge']
+field_names = ['Tweet', 'Target', 'Stance', 'knowledge_title', 'knowledge', 'knowledge_sim_rank', 'knowledge_sim_score', 'episodic_knowledge']
 
 def read_csv(path):
     all_datas = []
@@ -80,74 +81,82 @@ def write_json(path, data):
     with open(path, 'w') as write_f:
         json.dump(data, write_f)
 
-def get_response(system_prompt, prompts):
+def is_valid_json(s):
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0301", 
-            messages=[
-                {'role': 'system', 'content': system_prompt},
-                {"role": "user", "content": prompts}
-            ]
-        )
-        response = response['choices'][0]['message']['content'].strip('\n')
+        json.loads(s)['Output']
+        return True
+    except json.JSONDecodeError:
+        return False
+
+def get_response(system_prompts, prompts, error_try=0):
+    payload = {
+        "model": "gpt-3.5-turbo-0301",
+        "messages": [
+            {"role": "system", "content": system_prompts},
+            {"role": "user", "content": prompts}
+        ]
+    }
+    try:
+        response = ''
+        escape_response = ''
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
+        response = response['choices'][0]['message']['content'].strip()
+        if error_try > 4:
+            return None
+        if response.lower() == 'none' or response.lower() == 'none.':
+            return None
+        if is_valid_json(response):
+            response = json.loads(response)['Output']
+        else:
+            pattern = r'(?<!\{)(?<!: )(?<!\\)"(?!:)(?!,)(?!\})'  # 解析GPT回复中的双引号
+            escape_response = response.replace('\":\"', '\": \"')
+            escape_response = re.sub('{[ \n]*\"', '{\"', escape_response)
+            escape_response = re.sub('\"[ \n]*}', '\"}', escape_response)
+            escape_response = re.sub(pattern, '\\"', escape_response)
+            response = json.loads(escape_response)['Output']
+            if response.count('\"') % 2 != 0:
+                response = '\"' + response
+        if response.lower() == 'none' or response.lower() == 'none.':
+            return None
+        return response
     except Exception as e:
-        logger.error(f'Error: {e}')
-        time.sleep(25)
-        return get_response(system_prompt, prompts)
-    return response
+        logger.error(f'Get_response Error: {e}')
+        logger.error(f'The trigger text is {response}')
+        logger.error(f'The trigger escape text is {escape_response}')
+        time.sleep(0.5)
+        return get_response(system_prompts, prompts, error_try+1)
 
 if __name__ == '__main__':
-    if not os.path.isfile(data_pointer_file_path):
-        data_pointer = {}
-        for dataset_name in dataset_names:
-            data_pointer[dataset_name] = {}
-            for process_data_path in dataset_file_paths[dataset_name]:
-                data_pointer[dataset_name][process_data_path] = 0
-        write_json(data_pointer_file_path, data_pointer)
-
-    data_pointer = read_json(data_pointer_file_path)
     for dataset_name in dataset_names:
         logging.info(f"Now is process dataset: {dataset_name}...")
-        if dataset_name not in data_pointer:
-            data_pointer[dataset_name] = {}
-        for process_data_path in dataset_file_paths[dataset_name]:
-            logging.info(f'Processing {process_data_path}...')
-            if process_data_path not in data_pointer[dataset_name]:
-                data_pointer[dataset_name][process_data_path] = 0
-            write_path = write_file_dir + '/' + process_data_path.split('/')[-2] + '/' + process_data_path.split('/')[-1]
-            all_datas = read_csv(process_data_path)
-            for idx in tqdm(range(data_pointer[dataset_name][process_data_path], len(all_datas))):
-                try:
-                    if int(all_datas[idx]['knowledge_sim_rank']) > 3:
+        process_data_path = dataset_file_paths[dataset_name]
+        logging.info(f'Processing {process_data_path}...')
+        write_path = write_file_dir + '/' + process_data_path
+        if not os.path.exists(os.path.dirname(write_path)):
+            os.makedirs(os.path.dirname(write_path))
+        all_datas = read_csv(f'{read_data_dir}/{process_data_path}')
+        if os.path.exists(write_path):
+            already_write_datas_num = len(read_csv(write_path))
+        else:
+            already_write_datas_num = 0
+        for idx in tqdm(range(already_write_datas_num, len(all_datas))):
+            try:
+                episodic_knowledge = ''
+                for knowledge_idx in range(10):
+                    if eval(all_datas[idx]['knowledge_sim_score'])[knowledge_idx] < 0.02:
                         continue
-                    write_data = []
-                    sentence = all_datas[idx]['tweet_text']
-                    target = all_datas[idx]['target']
-                    label = all_datas[idx]['label']
-                    document = all_datas[idx]['knowledge']
+                    sentence = all_datas[idx]['Tweet']
+                    target = all_datas[idx]['Target']
+                    document = eval(all_datas[idx]['knowledge'])[knowledge_idx]
                     system_prompt = ''
-
-                    prompt = f"""
-If this [Wikipedia Document] is not related to the given [Sentence] and the given [Target], directly output None.
-Otherwise, summarize the sentences from the [Wikipedia Document] which related to the given [Sentence] and the given [Target].
-Please give your answer in json format and do not output anything unrelated to the task.
-Sentence: "{sentence}"
-Target: "{target}"
-Wikipedia Document: "{document}"
-{{
-    "Output": "sentences from [Wikipedia Document] related to the given [Sentence] and the given [Target]/None"
-}}
-"""
+                    prompt = episodic_knowledge_prompt % (sentence, target, document)
                     response = get_response(system_prompt, prompt)
-                    copy_data = deepcopy(all_datas[idx])
-                    copy_data['episodic_knowledge'] = response
-                    write_data.append(copy_data)
-                    time.sleep(25)
-                    write_csv(write_path, write_data, 'a')
-                except KeyboardInterrupt as e:
-                    logging.info(f'KeyboardInterrupt {dataset_name}, {process_data_path}: {idx}/{len(all_datas)}')
-                    data_pointer[dataset_name][process_data_path] = idx
-                    write_json(data_pointer_file_path, data_pointer)
-                    exit(0)
-            data_pointer[dataset_name][process_data_path] = idx
-            write_json(data_pointer_file_path, data_pointer)
+                    if response is None:
+                        continue
+                    episodic_knowledge += response + '\n'
+                copy_data = deepcopy(all_datas[idx])
+                copy_data['episodic_knowledge'] = episodic_knowledge
+                write_csv(write_path, [copy_data], 'a')
+            except KeyboardInterrupt as e:
+                logging.info(f'KeyboardInterrupt {dataset_name}, {process_data_path}: {idx}/{len(all_datas)}')
+                exit(0)

@@ -69,12 +69,12 @@ class Sem16KASDDataset(Dataset):
                 sentence = clean_text(sentence)
                 knowledge = clean_text(knowledge)
             if self.text_with_target:
-                datas.append(Sem16Config.topic_text[data['target']] + ' : ' + sentence)
+                datas.append(Sem16Config.topic_text[data['Target']] + ' : ' + sentence)
             else:
                 datas.append(sentence)
             knowledges.append(knowledge)
-            labels.append(Sem16Config.label2idx[data['label']])
-            label_num[data['label']] += 1
+            labels.append(Sem16Config.label2idx[data['Stance']])
+            label_num[data['Stance']] += 1
         logging.info(f'loading data {len(datas)} from {path}')
         logging.info(f'label num ' + ' '.join([f'{k}: {v}' for k,v in label_num.items()]))
         return datas, knowledges, labels
@@ -94,6 +94,7 @@ if __name__ == '__main__':
 
     Sem16KASDDataset(
         tokenizer=tokenizer,
+        target_name=Sem16Config.in_target_target_names[0],
         train_data=True,
         debug_mode=False
     )

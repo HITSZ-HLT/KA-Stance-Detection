@@ -58,8 +58,8 @@ class PStanceDataset(Dataset):
             all_datas = all_datas[:150]
 
         for data in all_datas:
-            sentence = data['tweet_text']
-            target = data['target']
+            sentence = data['Tweet']
+            target = data['Target']
             if self.if_split_hash_tag:
                 sentence = split_hash_tag(sentence.lstrip().rstrip())
             else:
@@ -68,8 +68,8 @@ class PStanceDataset(Dataset):
                 sentence = clean_text(sentence)
             datas.append(sentence)
             targets.append(target)
-            labels.append(PStanceConfig.label2idx[data['label']])
-            label_num[data['label']] += 1
+            labels.append(PStanceConfig.label2idx[data['Stance']])
+            label_num[data['Stance']] += 1
         logging.info(f'loading data {len(datas)} from {path}')
         logging.info(f'label num ' + ' '.join([f'{k}: {v}' for k,v in label_num.items()]))
         return datas, targets, labels
@@ -90,7 +90,7 @@ if __name__ == '__main__':
         tokenizer=tokenizer,
         text_with_target=False,
         if_split_hash_tag=False,
-        target_name=PStanceConfig.target_names[0],
+        target_name=PStanceConfig.in_target_target_names[0],
         in_target=True,
         test_data=True,
         debug_mode=True

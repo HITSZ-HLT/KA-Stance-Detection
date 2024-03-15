@@ -65,8 +65,8 @@ class Sem16Dataset(Dataset):
             all_datas = all_datas[:150]
 
         for data in all_datas:
-            sentence = data['tweet_text']
-            target = data['target']
+            sentence = data['Tweet']
+            target = data['Target']
             if self.if_split_hash_tag:
                 sentence = split_hash_tag(sentence)
             else:
@@ -75,8 +75,8 @@ class Sem16Dataset(Dataset):
                 sentence = clean_text(sentence)
             datas.append(sentence)
             targets.append(target)
-            labels.append(Sem16Config.label2idx[data['label']])
-            label_num[data['label']] += 1
+            labels.append(Sem16Config.label2idx[data['Stance']])
+            label_num[data['Stance']] += 1
         logging.info(f'loading data {len(datas)} from {path}')
         logging.info(f'label num ' + ' '.join([f'{k}: {v}' for k,v in label_num.items()]))
         return datas, targets, labels
@@ -97,7 +97,7 @@ if __name__ == '__main__':
         tokenizer=tokenizer,
         text_with_target=False,
         if_split_hash_tag=False,
-        target_name=Sem16Config.target_names[2],
+        target_name=Sem16Config.in_target_target_names[2],
         in_target=True,
         train_data=True,
         debug_mode=False

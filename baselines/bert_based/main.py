@@ -22,7 +22,7 @@ parser.add_argument('--cuda_idx', type=int)
 parser.add_argument('--dataset_name', type=str)
 parser.add_argument('--model_name', type=str, default='bertweet_base')
 parser.add_argument('--framework_name', type=str, default='base')
-parser.add_argument('--single_target', action='store_true')
+parser.add_argument('--in_target', action='store_true')
 parser.add_argument('--zero_shot', action='store_true')
 parser.add_argument('--multi_target', action='store_true')
 parser.add_argument('--sweep', action='store_true')
@@ -37,10 +37,8 @@ if GLOBAL_ARGS.dataset_name == 'vast':
     assert GLOBAL_ARGS.zero_shot
 if GLOBAL_ARGS.zero_shot:
     DATASET_NAME = GLOBAL_ARGS.dataset_name + '_zero_shot'
-elif GLOBAL_ARGS.single_target:
-    DATASET_NAME = GLOBAL_ARGS.dataset_name + '_single_target'
-else:
-    DATASET_NAME = GLOBAL_ARGS.dataset_name + '_multi_target'
+elif GLOBAL_ARGS.in_target:
+    DATASET_NAME = GLOBAL_ARGS.dataset_name + '_in_target'
 
 if GLOBAL_ARGS.framework_name == 'base':
     from data_config import data_configs as data_configs
@@ -303,7 +301,7 @@ def main(args=None):
     if GLOBAL_ARGS.zero_shot:
         train_type = 'zero_shot'
     else:
-        train_type = 'single_target'
+        train_type = 'in_target'
     if not GLOBAL_ARGS.debug_mode and not GLOBAL_ARGS.normal:
         run_name = f'{RUN_FRAMEWORK_NAME}_{train_type}_{GLOBAL_ARGS.dataset_name}_{GLOBAL_ARGS.model_name}_{GLOBAL_ARGS.framework_name}_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
         wandb.init(project=PROJECT_NAME, name=run_name, config=args)
@@ -316,7 +314,7 @@ def main(args=None):
 
     output_str = ''
     final_score = 0
-    for target_name in data_configs[GLOBAL_ARGS.dataset_name].short_target_names.keys():
+    for target_name in data_configs[GLOBAL_ARGS.dataset_name].in_target_target_names if train_type == 'in_target' else data_configs[GLOBAL_ARGS.dataset_name].zero_shot_target_names:
         acc = []
         f1 = []
         precision = []
@@ -328,7 +326,7 @@ def main(args=None):
             logging.info('preparing data...')
             set_seed(SEED[fold])
 
-            train_data_loader, valid_data_loader, test_data_loader = build_dataset(args, tokenizer, data_configs[GLOBAL_ARGS.dataset_name].short_target_names[target_name])
+            train_data_loader, valid_data_loader, test_data_loader = build_dataset(args, tokenizer, target_name)
 
             best_acc, best_f1, best_precision, best_recall = train_process(args, tokenizer, train_data_loader, valid_data_loader, test_data_loader, fold=fold, target_name=target_name, save_state=SAVE_STATE)
             acc.append(best_acc)
@@ -351,7 +349,7 @@ def main(args=None):
         recall_sem = recall_std / np.sqrt(args.train_times)
 
         logging.info(f'target "{target_name}" train finish')
-        result = {'target_name': target_name, 'acc_avg': acc_avg, 'f1_avg': f1_avg, 'precision_avg': precision_avg, 'recall_avg': recall_avg, 'acc_std': acc_std, 'f1_std': f1_std, 'precision_std': precision_std, 'recall_std': recall_std, 'acc_sem': acc_sem, 'f1_sem': f1_sem, 'precision_sem': precision_sem, 'recall_sem': recall_sem}
+        result = {'target_name': data_configs[GLOBAL_ARGS.dataset_name].short_target_names[target_name], 'acc_avg': acc_avg, 'f1_avg': f1_avg, 'precision_avg': precision_avg, 'recall_avg': recall_avg, 'acc_std': acc_std, 'f1_std': f1_std, 'precision_std': precision_std, 'recall_std': recall_std, 'acc_sem': acc_sem, 'f1_sem': f1_sem, 'precision_sem': precision_sem, 'recall_sem': recall_sem}
         final_score += f1_avg
         for key in result.values():
             if type(key) is str:
@@ -363,7 +361,7 @@ def main(args=None):
     logging.info(f'all train finish')
     output_str = f'\ntarget_name\tacc_avg:\tf1_avg:\tprecision_avg:\trecall_avg:\tacc_std\tf1_std\tprecision_std\trecall_std\tacc_sem\tf1_sem\tprecision_sem\trecall_sem\n' + output_str
     logging.info(output_str)
-    final_score = final_score / len(data_configs[GLOBAL_ARGS.dataset_name].short_target_names.keys())
+    final_score = final_score / len(data_configs[GLOBAL_ARGS.dataset_name].in_target_target_names if train_type == 'in_target' else data_configs[GLOBAL_ARGS.dataset_name].zero_shot_target_names)
     if not GLOBAL_ARGS.debug_mode and not GLOBAL_ARGS.normal:
         wandb.log({'final_score': final_score})
 

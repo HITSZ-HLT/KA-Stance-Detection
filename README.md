@@ -44,7 +44,7 @@ Process the datasets into the following format:
 
 The way of how I process the datasets is shown in `datasets/preprocess_datasets.py`
 
-Download our open-sourced knowledge from [Baidu Drive](https://pan.baidu.com/s/1X7Qn80vEdOiryoftiwEdUg?pwd=3ix3), and unzip them into folder `datasets/topic_knowledge`
+Download our open-sourced knowledge from [Baidu Drive](https://pan.baidu.com/s/1Ou6GWUzzP2PkyO1zgy1KLA?pwd=6gwa), and unzip them into folder `datasets/topic_knowledge`
 
 Download your needed model states into `model_state` or remove all `model_state/` dir prefix in all config files in `configs`.
 
